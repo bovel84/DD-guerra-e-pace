@@ -2504,7 +2504,7 @@
                 year: 2035,
                 hour: 6,
                 minute: 30,
-                dayName: 'Lunedi'
+                dayName: 'Lunedì'
             },
             // === NUOVO: World Memory System ===
             worldMemory: {
@@ -2535,7 +2535,7 @@
             isProcessing: false
         };
 
-        const DA= ['LunedA', 'MartedA', 'MercoledA', 'GiovedA', 'VenerdA', 'Sabato', 'Domenica'];
+        const DAYS = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
         const MONTHS = [
             { name: 'Gennaio', days: 31, season: 'Inverno' },
             { name: 'Febbraio', days: 28, season: 'Inverno' },
@@ -2552,10 +2552,10 @@
         ];
 
         const SEASON_ICONS = {
-            'Inverno': '❄',
+            'Inverno': '❄️',
             'Primavera': '🌸',
-            'Estate': 'a i ',
-            'Autunno': 'Y'
+            'Estate': '☀️',
+            'Autunno': '🍂'
         };
 
         const DEFAULT_SECONDARY_RESOURCE = {
@@ -3049,10 +3049,12 @@
         function computeDayName(year, month, day) {
             try {
                 const date = new Date(year, month - 1, day);
-                const idx = date.getDay(); // 0-6
-                return DAYS[idx] || 'LunedA';
+                const idx = date.getDay(); // 0-6, 0 = Domenica
+                // Normalizza per avere lunedì come prima voce dell'array DAYS
+                const normalized = (idx + 6) % 7; // Domenica (0) -> 6, Lunedì (1) -> 0
+                return DAYS[normalized] || 'Lunedì';
             } catch (e) {
-                return 'LunedA';
+                return 'Lunedì';
             }
         }
 
@@ -3198,13 +3200,13 @@
 
         function getTimePeriod() {
             const h = G.time.hour;
-            if (h >= 5 && h < 7) return { name: 'Alba', icon: 'Y...' };
-            if (h >= 7 && h < 12) return { name: 'Mattina', icon: '?' };
-            if (h >= 12 && h < 14) return { name: 'Mezzogiorno', icon: 'a i ' };
-            if (h >= 14 && h < 18) return { name: 'Pomeriggio', icon: 'Y' };
-            if (h >= 18 && h < 21) return { name: 'Sera', icon: 'Y' };
-            if (h >= 21 || h < 5) return { name: 'Notte', icon: 'YTM' };
-            return { name: 'Giorno', icon: 'a i ' };
+            if (h >= 5 && h < 7) return { name: 'Alba', icon: '🌅' };
+            if (h >= 7 && h < 12) return { name: 'Mattina', icon: '🌤️' };
+            if (h >= 12 && h < 14) return { name: 'Mezzogiorno', icon: '☀️' };
+            if (h >= 14 && h < 18) return { name: 'Pomeriggio', icon: '🌞' };
+            if (h >= 18 && h < 21) return { name: 'Sera', icon: '🌇' };
+            if (h >= 21 || h < 5) return { name: 'Notte', icon: '🌙' };
+            return { name: 'Giorno', icon: '☀️' };
         }
 
         function getTimeString() {
@@ -3214,7 +3216,8 @@
         function getFullTimeString() {
             const period = getTimePeriod();
             const season = getCurrentSeason();
-            return `${G.time.dayName} ${G.time.day} ${MONTHS[G.time.month - 1].name} ${G.time.year}, ${getTimeString()} (${period.name}, ${season})`;
+            const seasonIcon = SEASON_ICONS[season] || '';
+            return `${G.time.dayName} ${G.time.day} ${MONTHS[G.time.month - 1].name} ${G.time.year}, ${getTimeString()} (${period.name}, ${seasonIcon} ${season})`;
         }
 
         function updateTimeDisplay() {
