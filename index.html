@@ -1957,6 +1957,21 @@
             .inv-left-col { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 15px; }
             .inv-grid { grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); }
         }
+
+        /* Extra small devices */
+        @media (max-width: 480px) {
+            body { font-size: 14px; }
+            .home-container { padding: 12px; border-radius: 14px; }
+            .home-logo { font-size: 3.2em; }
+            .home-title { font-size: 1.8em; }
+            .home-btn { width: 100%; }
+            .topbar-row { gap: 4px; }
+            .story-entry { padding: 12px; margin-bottom: 12px; }
+            .creation-grid { grid-template-columns: repeat(2, 1fr); }
+            .dice-grid { grid-template-columns: repeat(2, 1fr); }
+            .wait-grid { grid-template-columns: repeat(1, 1fr); }
+            .modal { max-width: 100%; border-radius: 12px; }
+        }
     </style>
 </head>
 <body>
