@@ -196,6 +196,19 @@
             gap: 8px;
         }
 
+        .topbar-brief {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(93,245,167,0.25);
+            border-radius: 12px;
+            color: var(--ink-light);
+            font-size: 0.9em;
+            letter-spacing: 0.3px;
+        }
+
         .topbar-buttons {
             display: flex;
             gap: 5px;
@@ -2063,17 +2076,21 @@
                             <span class="info-meta" id="family-detail">Copertura: --</span>
                         </div>
                     </div>
-                    <div class="info-panel employees" id="panel-employees" title="Clicca per gestire le unita">
+                    <div class="info-panel employees" id="panel-employees" title="Clicca per gestire le unità">
                         <span class="info-icon-block">[OPS]</span>
                         <div class="info-content">
                             <div class="info-header">
-                                <span class="info-label">Unit  operative</span>
+                                <span class="info-label">Unità operative</span>
                                 <span class="info-value" id="employees-summary">--</span>
                             </div>
                             <span class="info-meta" id="employees-detail">Prontezza: --</span>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="topbar-brief" id="topbar-brief" title="Sitrep rapido basato su supply, morale e prontezza">
+                Sitrep in caricamento...
             </div>
         </div>
 
@@ -3210,6 +3227,7 @@
             if ($('wait-current-time')) {
                 $('wait-current-time').textContent = `${getTimeString()} - ${period.name}`;
             }
+            updateTopbarBrief();
         }
 
         function checkStatusEffects() {
@@ -4545,6 +4563,21 @@
                     empDetail.textContent = `Inf ${comp.infantry} A Cor ${comp.armor} A Art ${comp.artillery} A Aerei ${comp.air} A Supporto ${comp.support} A Prontezza ${comp.readiness}%`;
                 }
             }
+
+            updateTopbarBrief();
+        }
+
+        function updateTopbarBrief() {
+            const briefEl = $('topbar-brief');
+            if (!briefEl) return;
+            const fin = getFullFinancialSummary();
+            const comp = getForceComposition();
+            const readiness = comp.readiness || 0;
+            const morale = comp.avgMorale || 0;
+            const time = `${getTimeString()} ${getTimePeriod().name}`;
+            const supplyTrend = fin.net > 0 ? `Afflusso +${fin.net}` : fin.net < 0 ? `Consumi ${fin.net}` : 'Flusso neutro';
+            const text = `Ora ${time} · Supply: ${supplyTrend} · Unità ${comp.total} (Readiness ${readiness}%) · Morale medio ${morale}%`;
+            briefEl.textContent = text;
         }
 
         function getForceComposition() {
@@ -5274,6 +5307,95 @@
             
             updateCharacterUI();
             return { success: true, removed: toRemove, remaining, itemName };
+        }
+
+        function updateInventoryItem(itemId, changes = {}) {
+            const inv = G.character?.inventory || [];
+            const normalizedId = itemId.toLowerCase().replace(/\s+/g, '_');
+            const idx = inv.findIndex(i =>
+                i.id === normalizedId ||
+                i.id === itemId ||
+                (i.name && i.name.toLowerCase().replace(/\s+/g, '_') === normalizedId) ||
+                (i.name && i.name.toLowerCase() === itemId.toLowerCase())
+            );
+            if (idx === -1) return { success: false };
+            const item = inv[idx];
+            const map = {
+                nome: 'name',
+                name: 'name',
+                titolo: 'name',
+                title: 'name',
+                descrizione: 'description',
+                descr: 'description',
+                description: 'description',
+                valore: 'value',
+                value: 'value',
+                icona: 'icon',
+                icon: 'icon',
+                tipo: 'type',
+                type: 'type'
+            };
+            Object.entries(changes).forEach(([rawKey, rawVal]) => {
+                const key = map[rawKey.toLowerCase()] || rawKey;
+                if (key === 'value') {
+                    const parsed = parseInt(rawVal, 10);
+                    if (!Number.isNaN(parsed)) item.value = parsed;
+                } else if (key === 'name') {
+                    item.name = rawVal;
+                } else if (key === 'description') {
+                    item.description = rawVal;
+                } else if (key === 'icon') {
+                    item.icon = rawVal;
+                } else if (key === 'type') {
+                    item.type = rawVal;
+                }
+            });
+            updateCharacterUI();
+            return { success: true, item };
+        }
+
+        function updatePropertyInventoryItem(propertyName, itemName, changes = {}) {
+            const property = getPropertyByName(propertyName);
+            if (!property) return { success: false };
+            const item = findPropertyInventoryItem(propertyName, itemName);
+            if (!item) return { success: false };
+            const map = {
+                nome: 'name',
+                name: 'name',
+                titolo: 'name',
+                title: 'name',
+                descrizione: 'description',
+                descr: 'description',
+                description: 'description',
+                valore: 'value',
+                value: 'value',
+                icona: 'icon',
+                icon: 'icon',
+                tipo: 'type',
+                type: 'type',
+                categoria: 'category',
+                category: 'category'
+            };
+            Object.entries(changes).forEach(([rawKey, rawVal]) => {
+                const key = map[rawKey.toLowerCase()] || rawKey;
+                if (key === 'value') {
+                    const parsed = parseInt(rawVal, 10);
+                    if (!Number.isNaN(parsed)) item.value = parsed;
+                } else if (key === 'name') {
+                    item.name = rawVal;
+                } else if (key === 'description') {
+                    item.description = rawVal;
+                } else if (key === 'icon') {
+                    item.icon = rawVal;
+                } else if (key === 'type') {
+                    item.type = rawVal;
+                } else if (key === 'category') {
+                    item.category = normalizePropertyCategory(rawVal) || item.category;
+                }
+            });
+            ensurePropertyItemCategory(item);
+            updateCharacterUI();
+            return { success: true, item, property };
         }
 
         function addLootToInventory(itemId, qty = 1, meta = {}) {
@@ -6247,6 +6369,12 @@ Controllo se hi soldi... si li hai. Il fabbro ti da la spada.
 - Non aggiungere nell'inventario elementi scenografici o non possedibili (es. "vista dalla finestra", mobili fissati, parti dell'ambiente, sensazioni).
 - Gli oggetti che restano nel luogo vanno descritti nella narrazione senza usare [LOOT].
 
+**MODIFICA/ELIMINA OGGETTI**
+- Per aggiornare un oggetto dell'inventario personale usa [MODIFICA_OGGETTO: Nome|campo=valore|campo2=valore] (campi supportati: nome/ titolo, descrizione/descr, valore/value, icona/icon, tipo/type).
+- Per rimuovere oggetti personali usa [RIMUOVI_OGGETTO: Nome|quantitA ] (alias [ELIMINA_OGGETTO] o [CANCELLA_OGGETTO]).
+- Per il magazzino di una proprietA  usa [MODIFICA_OGGETTO_PROPRIETA: Nome ProprietA |Oggetto|campo=valore|...] e [RIMUOVI_OGGETTO_PROPRIETA: Nome ProprietA |Oggetto|quantitA ].
+- Scrivi SEMPRE questi tag se l'azione implica aggiornare, rinominare o eliminare oggetti, cosA  il LLM tiene memoria coerente dell'inventario.
+
 **USO E CONSUMO OGGETTI**
 - Quando il giocatore usa un oggetto dall'inventario, usa [USA: Nome Oggetto|QuantitA ] o [CONSUMA: Nome Oggetto|QuantitA ].
 - L'oggetto verrA  automaticamente rimosso o decrementato dall'inventario.
@@ -6635,6 +6763,42 @@ ${worldEvent ? `6. INTEGRA L'EVENTO MONDO nella narrazione: ${worldEvent.text}` 
                 }
             }
 
+            // Rimuovi oggetti dall'inventario personale
+            const removeItemRe = /\[(?:RIMUOVI_OGGETTO|ELIMINA_OGGETTO|CANCELLA_OGGETTO):\s*([^|\]]+)(?:\|([^\]]+))?\]/gi;
+            while ((m = removeItemRe.exec(response)) !== null) {
+                const itemName = (m[1] || '').trim();
+                const qtyRaw = (m[2] || '').trim();
+                const qty = qtyRaw ? parseInt(qtyRaw, 10) : 1;
+                const removal = removeFromInventory(itemName, Number.isFinite(qty) ? qty : 1);
+                if (removal.success) {
+                    const suffix = removal.remaining > 0 ? ` (restano ${removal.remaining})` : ' (esaurito)';
+                    addStoryEntry(`Rimossi: ${removal.itemName} x${removal.removed}${suffix}`, 'mechanic');
+                } else {
+                    addStoryEntry(` Impossibile rimuovere: ${itemName} non trovato nell'inventario`, 'system');
+                }
+            }
+
+            // Modifica oggetti dell'inventario personale
+            const modifyItemRe = /\[MODIFICA_OGGETTO:\s*([^|\]]+)\|([^\]]+)\]/gi;
+            while ((m = modifyItemRe.exec(response)) !== null) {
+                const itemName = (m[1] || '').trim();
+                const fieldsRaw = (m[2] || '').trim();
+                const changes = {};
+                fieldsRaw.split('|').map(f => f.trim()).filter(Boolean).forEach(field => {
+                    const [k, ...rest] = field.split('=');
+                    const key = (k || '').trim();
+                    const val = rest.length ? rest.join('=').trim() : '';
+                    if (key) changes[key] = val;
+                });
+                const res = updateInventoryItem(itemName, changes);
+                if (res.success) {
+                    const applied = Object.keys(changes).join(', ');
+                    addStoryEntry(`Aggiornato ${res.item.name || itemName}: ${applied}`, 'mechanic');
+                } else {
+                    addStoryEntry(` Oggetto non modificato (non trovato): ${itemName}`, 'system');
+                }
+            }
+
             // Extract NPC Stats (nuovo formato: nome|livello|for,des,cos,int,sag,car|minaccia)
             const npcStatsRe = /\[NPC_STATS:\s*([^|\]]+)\|([^|\]]+)\|([^|\]]+)\|([^|\]]+)\]/gi;
             while ((m = npcStatsRe.exec(response)) !== null) {
@@ -6847,6 +7011,43 @@ ${worldEvent ? `6. INTEGRA L'EVENTO MONDO nella narrazione: ${worldEvent.text}` 
                 addLootToPropertyInventory(propertyName, itemName, qty, { description, value, icon, category: categoryKey });
             }
 
+            // Modifica oggetti nel magazzino di una proprietA 
+            const modifyPropItemRe = /\[MODIFICA_OGGETTO_PROPRIETA:\s*([^|]+)\|([^|]+)\|([^\]]+)\]/gi;
+            while ((m = modifyPropItemRe.exec(response)) !== null) {
+                const propertyName = (m[1] || '').trim();
+                const itemName = (m[2] || '').trim();
+                const fieldsRaw = (m[3] || '').trim();
+                const changes = {};
+                fieldsRaw.split('|').map(f => f.trim()).filter(Boolean).forEach(field => {
+                    const [k, ...rest] = field.split('=');
+                    const key = (k || '').trim();
+                    const val = rest.length ? rest.join('=').trim() : '';
+                    if (key) changes[key] = val;
+                });
+                const res = updatePropertyInventoryItem(propertyName, itemName, changes);
+                if (res.success) {
+                    const applied = Object.keys(changes).join(', ');
+                    addStoryEntry(`Magazzino ${res.property?.name || propertyName}: aggiornato ${res.item.name || itemName} (${applied})`, 'mechanic');
+                } else {
+                    addStoryEntry(` Oggetto non modificato (non trovato) @ ${propertyName}: ${itemName}`, 'system');
+                }
+            }
+
+            // Rimuovi oggetti dal magazzino di una proprietA 
+            const removePropItemRe = /\[RIMUOVI_OGGETTO_PROPRIETA:\s*([^|]+)\|([^|\]]+)(?:\|([^\]]+))?\]/gi;
+            while ((m = removePropItemRe.exec(response)) !== null) {
+                const propertyName = (m[1] || '').trim();
+                const itemName = (m[2] || '').trim();
+                const qty = parseInt((m[3] || '').trim(), 10);
+                const removal = removeItemFromPropertyInventory(propertyName, itemName, Number.isFinite(qty) ? qty : undefined);
+                if (removal && removal.removed > 0) {
+                    const suffix = removal.remaining > 0 ? ` (restano ${removal.remaining})` : ' (esaurito)';
+                    addStoryEntry(`${removal.property?.name || propertyName}: rimossi ${removal.itemName} x${removal.removed}${suffix}`, 'mechanic');
+                } else {
+                    addStoryEntry(` Nessuna rimozione eseguita @ ${propertyName}: ${itemName}`, 'system');
+                }
+            }
+
             // Extract Property Inventory Commands (CONSUMA/USA/SCARTA/VENDI_OGGETTO_PROPRIETA)
             const propertyInventoryCmdRe = /\[((?:CONSUMA|USA|UTILIZZA|SCARTA|DROP|VENDI)(?:_OGGETTO)?_PROPRIETA):\s*([^|\]]+)\|([^|\]]+)(?:\|([^\]]+))?\]/gi;
             while ((m = propertyInventoryCmdRe.exec(response)) !== null) {
@@ -6908,6 +7109,12 @@ ${worldEvent ? `6. INTEGRA L'EVENTO MONDO nella narrazione: ${worldEvent.text}` 
                 .replace(/\[MECCANICA:[^\]]*\]/gi, '')
                 .replace(/\[LOOT:[^\]]*\]/gi, '')
                 .replace(/\[LOOT_PROPRIETA:[^\]]*\]/gi, '')
+                .replace(/\[MODIFICA_OGGETTO:[^\]]*\]/gi, '')
+                .replace(/\[RIMUOVI_OGGETTO[^\]]*\]/gi, '')
+                .replace(/\[ELIMINA_OGGETTO[^\]]*\]/gi, '')
+                .replace(/\[CANCELLA_OGGETTO[^\]]*\]/gi, '')
+                .replace(/\[MODIFICA_OGGETTO_PROPRIETA:[^\]]*\]/gi, '')
+                .replace(/\[RIMUOVI_OGGETTO_PROPRIETA[^\]]*\]/gi, '')
                 .replace(/\[(?:CONSUMA|USA|UTILIZZA|SCARTA|DROP|VENDI)(?:_OGGETTO)?_PROPRIETA:[^\]]*\]/gi, '')
                 .replace(/\[SUGGERIMENTO:[^\]]*\]/gi, '')
                 .replace(/\[NPC:[^\]]*\]/gi, '')
