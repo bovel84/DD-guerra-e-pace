@@ -209,6 +209,33 @@
             letter-spacing: 0.3px;
         }
 
+        .currency-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: linear-gradient(180deg, rgba(93,245,167,0.14), rgba(47,163,109,0.14));
+            border: 1px solid rgba(93,245,167,0.35);
+            border-radius: 14px;
+            font-family: 'Cinzel', serif;
+            color: var(--ink);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+            min-width: 120px;
+            justify-content: center;
+        }
+        .currency-pill .cp-icon { font-size: 1.1em; }
+        .currency-pill .cp-label {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+            text-align: left;
+        }
+        .currency-pill .cp-main { font-weight: 700; }
+        .currency-pill.deficit {
+            background: linear-gradient(180deg, rgba(255,107,107,0.16), rgba(255,107,107,0.1));
+            border-color: rgba(255,107,107,0.45);
+        }
+
         .topbar-buttons {
             display: flex;
             gap: 5px;
@@ -2439,7 +2466,7 @@
                     <label class="form-label">Archetipo</label>
                     <div class="creation-grid" id="archetype-grid"></div>
                 </div>
-                <button class="btn primary" id="btn-start-game" style="width: 100%;">asi  Avvia Operazione!</button>
+                <button class="btn primary" id="btn-start-game" style="width: 100%;">Avvia Operazione!</button>
             </div>
         </div>
     </div>
