@@ -1958,6 +1958,14 @@
             .inv-grid { grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); }
         }
 
+        /* Riduci l'impatto della topbar e libera spazio al racconto su tablet/smartphone */
+        @media (max-width: 768px) {
+            #game-screen { height: auto; min-height: 100vh; overflow: visible; }
+            .game-topbar { position: static; border-bottom-width: 1px; }
+            .story-container { min-height: 60vh; }
+            .story-scroll { max-height: none; padding-top: 8px; }
+        }
+
         /* Extra small devices */
         @media (max-width: 480px) {
             body { font-size: 14px; }
